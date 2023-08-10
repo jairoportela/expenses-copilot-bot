@@ -1,0 +1,30 @@
+{
+  "name": "expenses-copilot-bot",
+  "version": "1.0.0",
+  "description": "Bot for telegram to create and get monthly expenses",
+  "main": "src/server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jairoportela/expenses-copilot-bot.git"
+  },
+  "keywords": [
+    "bot",
+    "telegram",
+    "node",
+    "notion"
+  ],
+  "author": "Jairo Andres Portela Cortes",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jairoportela/expenses-copilot-bot/issues"
+  },
+  "homepage": "https://github.com/jairoportela/expenses-copilot-bot#readme",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "telegraf": "^4.12.2"
+  }
+}
