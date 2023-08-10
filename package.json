@@ -4,7 +4,9 @@
   "description": "Bot for telegram to create and get monthly expenses",
   "main": "src/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:dev": "nodemon -r dotenv/config src/server.js",
+    "start": "node src/server.js"
   },
   "type": "module",
   "repository": {
