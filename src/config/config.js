@@ -8,6 +8,11 @@ const config = {
   NOTION_EXPENSES_DB_ID: process.env.NOTION_EXPENSES_DB_ID,
   NOTION_MONTHS_DB_ID: process.env.NOTION_MONTHS_DB_ID,
   NOTION_PAYMENTHS_METHODS_DB_ID: process.env.NOTION_PAYMENTHS_METHODS_DB_ID,
+  redis: {
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
+    password: process.env.REDIS_PASSWORD,
+  },
 };
 
 export default config;
