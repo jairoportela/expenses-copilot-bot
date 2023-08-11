@@ -5,8 +5,8 @@ import getActualMonth from './months_controller.js';
 
 // Función para extraer la información del mensaje
 
-const createExpense = async ({ name, value, category }) => {
-  if (name && value && category) {
+const createExpense = async ({ name, value, category, paymentMethod }) => {
+  if (name && value && category && paymentMethod) {
     try {
       // Crea una instancia de DateTime en el timezone de Bogotá
       const bogotaDateTime = DateTime.now().setZone('America/Bogota');
@@ -37,6 +37,7 @@ const createExpense = async ({ name, value, category }) => {
           Categories: { relation: [{ id: category }] },
           Month: { relation: [{ id: actualMonth }] },
           Date: { date: { start: isoDate } },
+          'Payment Methods': { relation: [{ id: paymentMethod }] },
         },
       });
       console.log('Gasto registrado en Notion:', data);

@@ -5,6 +5,7 @@ import { message } from 'telegraf/filters';
 import express from 'express';
 
 import getMyCategories from './categories/categories_controller.js';
+import getMyPaymentMethods from './categories/payments_methods_controller.js';
 import createExpense from './categories/expenses_controller.js';
 
 const port = Number(config.PORT) || 3000;
@@ -44,7 +45,12 @@ bot.on(message('text'), async (ctx) => {
     const categories = await getMyCategories({ type: 'Expenses' });
     const keyboard = Markup.inlineKeyboard(
       categories.map((category) => {
-        return [Markup.button.callback(category.name, `select:${category.id}`)];
+        return [
+          Markup.button.callback(
+            category.name,
+            `select_category:${category.id}`
+          ),
+        ];
       })
     );
 
@@ -57,8 +63,8 @@ bot.on(message('text'), async (ctx) => {
   }
 });
 
-//Select category and create the expense
-bot.action(/select:(.*)/, async (ctx) => {
+//Select category
+bot.action(/select_category:(.*)/, async (ctx) => {
   const chatId = ctx.from.id;
 
   if (chatId != config.TELEGRAM_USER_ID) return errorResponse(ctx);
@@ -70,9 +76,37 @@ bot.action(/select:(.*)/, async (ctx) => {
     null,
     'Has seleccionado la categoría con ID: ' + category
   );
+  const paymentMethods = await getMyPaymentMethods();
+  const keyboard = Markup.inlineKeyboard(
+    paymentMethods.map((paymentMethod) => {
+      return [
+        Markup.button.callback(
+          paymentMethod.name,
+          `select_payment:${paymentMethod.id}`
+        ),
+      ];
+    })
+  );
+
+  ctx.reply('Selecciona una método de pago:', keyboard);
+});
+//Select and paymenth method
+
+bot.action(/select_payment:(.*)/, async (ctx) => {
+  const chatId = ctx.from.id;
+
+  if (chatId != config.TELEGRAM_USER_ID) return errorResponse(ctx);
+  const paymentMethod = ctx.match[1];
+  expensesByUser[chatId].paymentMethod = paymentMethod;
+  ctx.telegram.editMessageText(
+    chatId,
+    ctx.callbackQuery.message.message_id,
+    null,
+    'Has seleccionado el método de pago con ID: ' + paymentMethod
+  );
 
   ctx.reply(await createExpense(expensesByUser[chatId]));
-  delete expensesByUser[chatId]; // Limpia el estado de la conve
+  delete expensesByUser[chatId]; // Limpia el estado de la conversación
 });
 
 const errorResponse = (ctx) =>
