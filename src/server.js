@@ -36,6 +36,14 @@ bot.on(message('text'), async (ctx) => {
   const chatId = ctx.from.id;
   if (chatId != config.TELEGRAM_USER_ID) return errorResponse(ctx);
 
+  // Verifica si el usuario está en el flujo
+  if (!expensesByUser[chatId]) {
+    ctx.reply(
+      'Para agregar un gasto, inicia el flujo con el comando /agregar_gasto.'
+    );
+    return;
+  }
+
   const message = ctx.message.text;
   if (expensesByUser[chatId].name === undefined) {
     expensesByUser[chatId].name = message;

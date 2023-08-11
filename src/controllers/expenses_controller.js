@@ -47,7 +47,7 @@ const createExpense = async ({ name, value, category, paymentMethod }) => {
       return 'Hubo un error al registrar el gasto en Notion. ❌';
     }
   } else {
-    return 'Por favor, utiliza el comando /registro y sigue el formato correcto.';
+    return 'El formato utilizado no es el correcto, vuelve a empezar el flujo usando el comando /agregar_gasto.';
   }
 };
 
