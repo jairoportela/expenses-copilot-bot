@@ -7,3 +7,18 @@ services:
     env_file: .env
     ports:
       - 3000:80
+    depends_on:
+      - cache
+  cache:
+    image: redis
+    restart: always
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - cache:/data
+volumes:
+  cache:
+    driver: local

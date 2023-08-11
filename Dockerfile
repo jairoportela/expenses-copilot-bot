@@ -1,5 +1,5 @@
 # Use a Node.js base image so we don't have to install a bunch of extra things
-FROM node:16 as development
+FROM node:16 AS development
 
 WORKDIR /usr/src/app
 
@@ -20,7 +20,7 @@ EXPOSE 80
 CMD [ "npm", "run", "start:dev" ]
 
 # "Builder" stage extends from the "development" stage but does an NPM clean install with only production dependencies 
-FROM development as builder
+FROM development AS builder
 WORKDIR /usr/src/app
 RUN rm -rf node_modules
 RUN npm ci --only=production
@@ -29,7 +29,7 @@ CMD [ "npm", "start" ]
  
  
 # Final stage uses a very small image and copies the built assets across from the "builder" stage
-FROM alpine:latest as production
+FROM alpine:latest AS production
 RUN apk --no-cache add nodejs ca-certificates
 WORKDIR /root/
 COPY --from=builder /usr/src/app ./
