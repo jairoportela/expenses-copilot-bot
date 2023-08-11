@@ -4,9 +4,9 @@ import { Telegraf, Markup } from 'telegraf';
 import { message } from 'telegraf/filters';
 import express from 'express';
 
-import getMyCategories from './categories/categories_controller.js';
-import getMyPaymentMethods from './categories/payments_methods_controller.js';
-import createExpense from './categories/expenses_controller.js';
+import getMyCategories from './controllers/categories_controller.js';
+import getMyPaymentMethods from './controllers/payments_methods_controller.js';
+import createExpense from './controllers/expenses_controller.js';
 
 const port = Number(config.PORT) || 3000;
 if (!config.TELEGRAM_BOT_TOKEN)
