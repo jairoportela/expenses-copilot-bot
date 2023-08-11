@@ -3,24 +3,9 @@ import config from '../config/config.js';
 import { DateTime } from 'luxon';
 
 // Función para extraer la información del mensaje
-function getExpenseInfo(text) {
-  const regex = /Nombre: (.+)\nValor: (.+)\nCategoría: (.+)/s;
-  const match = text.match(regex);
 
-  if (match) {
-    const nombre = match[1];
-    const valor = match[2];
-    const categoria = match[3];
-
-    return { nombre, valor, categoria };
-  }
-
-  return {};
-}
-
-const createExpense = async (messageText) => {
-  const { nombre, valor, categoria } = getExpenseInfo(messageText);
-  if (nombre && valor && categoria) {
+const createExpense = async ({ name, value, category }) => {
+  if (name && value && category) {
     try {
       // Crea una instancia de DateTime en el timezone de Bogotá
       const bogotaDateTime = DateTime.now().setZone('America/Bogota');
@@ -38,16 +23,16 @@ const createExpense = async (messageText) => {
               {
                 type: 'text',
                 text: {
-                  content: nombre,
+                  content: name,
                 },
               },
             ],
           },
           Amount: {
             type: 'number',
-            number: parseInt(valor),
+            number: parseInt(value),
           },
-          Categories: { relation: [{ id: categoria }] },
+          Categories: { relation: [{ id: category }] },
           Date: { date: { start: isoDate } },
         },
       });

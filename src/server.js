@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import config from './config/config.js';
-import { Telegraf } from 'telegraf';
+import { Telegraf, Markup } from 'telegraf';
 import { message } from 'telegraf/filters';
 import express from 'express';
 
@@ -12,34 +12,61 @@ if (!config.TELEGRAM_BOT_TOKEN)
   throw new Error('"BOT_TOKEN" env var is required!');
 
 const bot = new Telegraf(config.TELEGRAM_BOT_TOKEN);
+
+const expensesByUser = {};
+
 const app = express();
 
 bot.start((ctx) =>
   ctx.reply('Bienvenido al nuevo sistema de registro de gastos 💰')
 );
-bot.help((ctx) => ctx.reply('Send me a sticker'));
 
-bot.command('categorias', async (ctx) => {
+//Start the create expense flow
+bot.command('crear_gasto', (ctx) => {
   const chatId = ctx.from.id;
   if (chatId != config.TELEGRAM_USER_ID) return errorResponse(ctx);
-  ctx.reply('Estamos procesando tu solicitud ⏲️');
+  expensesByUser[chatId] = {}; // Inicializa el estado de la conversación
 
-  ctx.replyWithHTML(await getMyCategories());
+  ctx.reply('Por favor, escribe el nombre del gasto:');
 });
 
-bot.command('registro', (ctx) => {
-  const chatId = ctx.from.id;
-  if (chatId != config.TELEGRAM_USER_ID) return errorResponse(ctx);
-  ctx.reply(
-    'Por favor, envíame el nombre del gasto, el valor y la categoría en el siguiente formato:\n\nNombre: <nombre_gasto>\nValor: <valor>\nCategoría: <categoria>'
-  );
-});
+//Manage the create expense flow
 bot.on(message('text'), async (ctx) => {
   const chatId = ctx.from.id;
   if (chatId != config.TELEGRAM_USER_ID) return errorResponse(ctx);
-  ctx.reply('Estamos procesando tu solicitud ⏲️');
-  const messageText = ctx.message.text;
-  ctx.replyWithHTML(await createExpense(messageText));
+
+  const message = ctx.message.text;
+  if (expensesByUser[chatId].name === undefined) {
+    expensesByUser[chatId].name = message;
+    ctx.reply('Ahora escribe el valor del gasto:');
+  } else if (expensesByUser[chatId].value === undefined) {
+    expensesByUser[chatId].value = message;
+    const categories = await getMyCategories();
+    const keyboard = Markup.inlineKeyboard(
+      categories.map((category) => {
+        return [Markup.button.callback(category.name, `select:${category.id}`)];
+      })
+    );
+
+    ctx.reply('Selecciona una categoría:', keyboard);
+  } else if (expensesByUser[chatId].categoria === undefined) {
+    expensesByUser[chatId].category = message;
+
+    ctx.reply(await createExpense(expensesByUser[chatId]));
+    delete expensesByUser[userId]; // Limpia el estado de la conversación
+  }
+});
+
+//Select category and create the expense
+bot.action(/select:(.*)/, async (ctx) => {
+  const chatId = ctx.from.id;
+
+  if (chatId != config.TELEGRAM_USER_ID) return errorResponse(ctx);
+  const category = ctx.match[1];
+  expensesByUser[chatId].category = category;
+
+  ctx.reply(await createExpense(expensesByUser[chatId]));
+  delete expensesByUser[chatId]; // Limpia el estado de la conve
 });
 
 const errorResponse = (ctx) =>
@@ -47,10 +74,10 @@ const errorResponse = (ctx) =>
 
 bot.launch();
 
-app.get('/', (req, res) => res.send('Ok'));
-
-app.listen(port, () => console.log('Listening on port', port));
-
 // Enable graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
+
+app.get('/', (_, res) => res.send('Ok'));
+
+app.listen(port, () => console.log('Listening on port', port));
