@@ -41,7 +41,7 @@ bot.on(message('text'), async (ctx) => {
     ctx.reply('Ahora escribe el valor del gasto:');
   } else if (expensesByUser[chatId].value === undefined) {
     expensesByUser[chatId].value = message;
-    const categories = await getMyCategories();
+    const categories = await getMyCategories({ type: 'Expenses' });
     const keyboard = Markup.inlineKeyboard(
       categories.map((category) => {
         return [Markup.button.callback(category.name, `select:${category.id}`)];
@@ -64,6 +64,12 @@ bot.action(/select:(.*)/, async (ctx) => {
   if (chatId != config.TELEGRAM_USER_ID) return errorResponse(ctx);
   const category = ctx.match[1];
   expensesByUser[chatId].category = category;
+  ctx.telegram.editMessageText(
+    chatId,
+    ctx.callbackQuery.message.message_id,
+    null,
+    'Has seleccionado la categoría con ID: ' + category
+  );
 
   ctx.reply(await createExpense(expensesByUser[chatId]));
   delete expensesByUser[chatId]; // Limpia el estado de la conve

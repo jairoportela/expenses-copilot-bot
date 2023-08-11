@@ -6,6 +6,7 @@ const config = {
   NOTION_KEY: process.env.NOTION_KEY,
   NOTION_CATEGORIES_DB_ID: process.env.NOTION_CATEGORIES_DB_ID,
   NOTION_EXPENSES_DB_ID: process.env.NOTION_EXPENSES_DB_ID,
+  NOTION_MONTHS_DB_ID: process.env.NOTION_MONTHS_DB_ID,
 };
 
 export default config;
