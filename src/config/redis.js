@@ -1,9 +1,7 @@
 import { createClient } from 'redis';
 import config from './config.js';
 const client = createClient({
-  url: `redis://default:${config.redis.password}@${config.redis.host}:${config.redis.port}`,
-  host: config.redis.host,
-  port: config.redis.port,
+  url: config.redis.url,
   password: config.redis.password, // Aquí proporciona la contraseña directamente
 });
 

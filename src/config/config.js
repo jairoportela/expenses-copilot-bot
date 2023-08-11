@@ -9,8 +9,8 @@ const config = {
   NOTION_MONTHS_DB_ID: process.env.NOTION_MONTHS_DB_ID,
   NOTION_PAYMENTHS_METHODS_DB_ID: process.env.NOTION_PAYMENTHS_METHODS_DB_ID,
   redis: {
-    host: process.env.REDIS_HOST,
-    port: process.env.REDIS_PORT,
+    url: process.env.REDIS_URL,
+
     password: process.env.REDIS_PASSWORD,
   },
 };
