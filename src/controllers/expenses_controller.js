@@ -1,7 +1,7 @@
 import notion from '../config/notion.js';
 import config from '../config/config.js';
 import { DateTime } from 'luxon';
-import getActualMonth from './months_controller.js';
+import { getActualMonthId } from './months_controller.js';
 
 // Función para extraer la información del mensaje
 
@@ -10,7 +10,7 @@ const createExpense = async ({ name, value, category, paymentMethod }) => {
     try {
       // Crea una instancia de DateTime en el timezone de Bogotá
       const bogotaDateTime = DateTime.now().setZone('America/Bogota');
-      const actualMonth = await getActualMonth();
+      const actualMonth = await getActualMonthId();
 
       // Formatea la fecha en formato ISO
       const isoDate = bogotaDateTime.toISO();

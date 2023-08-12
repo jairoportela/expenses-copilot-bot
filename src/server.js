@@ -7,6 +7,7 @@ import express from 'express';
 import getMyCategories from './controllers/categories_controller.js';
 import getMyPaymentMethods from './controllers/payments_methods_controller.js';
 import createExpense from './controllers/expenses_controller.js';
+import { getActualMonthData } from './controllers/months_controller.js';
 
 const port = Number(config.PORT) || 3000;
 if (!config.TELEGRAM_BOT_TOKEN)
@@ -22,6 +23,19 @@ bot.start((ctx) =>
   ctx.reply('Bienvenido al nuevo sistema de registro de gastos 💰')
 );
 
+bot.command('help', (ctx) => {
+  const helpMessage = `
+Bienvenido al bot de finanzas. Aquí tienes una lista de comandos disponibles:
+  
+/crear_gasto - Crea un nuevo gasto.
+/resumen_mes - Muestra un resumen financiero del mes actual.
+  
+¡Espero que esta información te sea útil!
+  `;
+
+  ctx.reply(helpMessage);
+});
+
 //Start the create expense flow
 bot.command('crear_gasto', (ctx) => {
   const chatId = ctx.from.id;
@@ -29,6 +43,30 @@ bot.command('crear_gasto', (ctx) => {
   expensesByUser[chatId] = {}; // Inicializa el estado de la conversación
 
   ctx.reply('Por favor, escribe el nombre del gasto:');
+});
+
+function formatNumberWithCommas(number) {
+  return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+bot.command('resumen_mes', async (ctx) => {
+  const chatId = ctx.from.id;
+  if (chatId != config.TELEGRAM_USER_ID) return errorResponse(ctx);
+
+  const info = await getActualMonthData();
+  const isExceedingBudget = info.balance < 0;
+
+  const formattedInfo = `
+<b>Información Financiera\n${info.month}</b>\n
+Total gastos: $ ${formatNumberWithCommas(info.totalExpenses)}
+Total ingresos: $ ${formatNumberWithCommas(info.totalIncomes)}
+Balance: $ ${formatNumberWithCommas(info.balance)}
+Presupuesto: $ ${formatNumberWithCommas(info.budget)}${
+    isExceedingBudget ? ' ⚠️' : ' ✅'
+  }
+`;
+
+  ctx.replyWithHTML(formattedInfo, Markup.removeKeyboard());
 });
 
 //Manage the create expense flow
