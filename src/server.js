@@ -46,7 +46,8 @@ bot.command('crear_gasto', (ctx) => {
 });
 
 function formatNumberWithCommas(number) {
-  return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const floorNumber = Math.floor(number);
+  return floorNumber.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
 bot.command('resumen_mes', async (ctx) => {

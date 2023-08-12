@@ -4,6 +4,7 @@ import config from '../config/config.js';
 export const getActualMonthId = async () => {
   const { results } = await notion.databases.query({
     database_id: config.NOTION_MONTHS_DB_ID,
+    filter_properties: ['title'],
     filter: {
       property: 'Actual Month',
       checkbox: {
@@ -18,6 +19,7 @@ export const getActualMonthId = async () => {
 export const getActualMonthData = async () => {
   const { results } = await notion.databases.query({
     database_id: config.NOTION_MONTHS_DB_ID,
+    filter_properties: ['c%3Fq~', 'RTg_', 'yud%60', 'QEa~', 'title'],
     filter: {
       property: 'Actual Month',
       checkbox: {
@@ -27,14 +29,29 @@ export const getActualMonthData = async () => {
   });
 
   if (results.length == 0) return null;
+  const pageId = results[0].id;
+
+  const [totalExpensesData, totalIncomesData, balanceData] = await Promise.all([
+    notion.pages.properties.retrieve({
+      page_id: pageId,
+      property_id: 'c%3Fq~',
+    }),
+    notion.pages.properties.retrieve({
+      page_id: pageId,
+      property_id: 'RTg_',
+    }),
+    notion.pages.properties.retrieve({
+      page_id: pageId,
+      property_id: 'yud%60',
+    }),
+  ]);
 
   const monthData = results[0].properties;
-
   return {
     month: monthData.Name.title[0].plain_text,
-    totalExpenses: monthData['Total Expenses']['rollup']['number'] ?? 0,
-    totalIncomes: monthData['Total Incomes']['rollup']['number'] ?? 0,
-    balance: monthData.Balance.formula.number ?? 0,
+    totalExpenses: totalExpensesData.property_item.rollup.number ?? 0,
+    totalIncomes: totalIncomesData.property_item.rollup.number ?? 0,
+    balance: balanceData.formula.number ?? 0,
     budget: monthData.Budget.number ?? 0,
   };
 };
