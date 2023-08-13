@@ -3,7 +3,7 @@ import config from '../config/config.js';
 
 export const getActualMonthId = async () => {
   const { results } = await notion.databases.query({
-    database_id: config.NOTION_MONTHS_DB_ID,
+    database_id: config.notion.monthsTable,
     filter_properties: ['title'],
     filter: {
       property: 'Actual Month',
@@ -18,7 +18,7 @@ export const getActualMonthId = async () => {
 
 export const getActualMonthData = async () => {
   const { results } = await notion.databases.query({
-    database_id: config.NOTION_MONTHS_DB_ID,
+    database_id: config.notion.monthsTable,
     filter_properties: ['c%3Fq~', 'RTg_', 'yud%60', 'QEa~', 'title'],
     filter: {
       property: 'Actual Month',

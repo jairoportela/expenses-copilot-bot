@@ -3,7 +3,7 @@ import config from '../config/config.js';
 
 // Initializing a client
 const notion = new Client({
-  auth: config.NOTION_KEY,
+  auth: config.notion.key,
 });
 
 export default notion;
