@@ -1,10 +1,9 @@
 import 'dotenv/config';
 import config from './config/config.js';
-import { Telegraf, Markup, session } from 'telegraf';
+import { Telegraf, session } from 'telegraf';
 import { message } from 'telegraf/filters';
 import express from 'express';
 
-import { getExpensesCategories } from './controllers/categories_controller.js';
 import helpCommand from './commands/help_command.js';
 import startCommand from './commands/start_command.js';
 import summaryMonthCommand from './commands/summary_month_command.js';
@@ -19,7 +18,10 @@ import isValidUser from './utils/valid_user.js';
 import {
   CreateExpenseCommandText,
   CreateIncomeCommandText,
+  HelpCommandText,
+  MonthSummaryCommandText,
 } from './constants/constants.js';
+import flowMessageGetter from './utils/flow_message_getter.js';
 
 const port = Number(config.PORT) || 3000;
 if (!config.telegram.botToken)
@@ -32,10 +34,9 @@ const app = express();
 
 bot.start(startCommand);
 
-bot.command('help', helpCommand);
+bot.command(HelpCommandText, helpCommand);
 
-//Start the create expense flow
-bot.command('resumen_mes', summaryMonthCommand);
+bot.command(MonthSummaryCommandText, summaryMonthCommand);
 
 bot.command(CreateExpenseCommandText, (ctx) =>
   createDataCommand(ctx, CreateExpenseCommandText)
@@ -58,7 +59,7 @@ bot.on(message('text'), async (ctx) => {
 
   if (ctx.session[chatId].name === undefined) {
     ctx.session[chatId].name = message;
-    ctx.reply('Ahora escribe el valor del gasto:');
+    ctx.reply(`Ahora escribe el valor del ${flowMessageGetter(currentFlow)}:`);
   } else if (ctx.session[chatId].value === undefined) {
     ctx.session[chatId].value = message;
     const keyboard = await createCategoriesKeyboard(ctx);
