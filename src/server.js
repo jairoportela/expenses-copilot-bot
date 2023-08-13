@@ -22,10 +22,10 @@ import {
 } from './constants/constants.js';
 
 const port = Number(config.PORT) || 3000;
-if (!config.TELEGRAM_BOT_TOKEN)
+if (!config.telegram.botToken)
   throw new Error('"BOT_TOKEN" env var is required!');
 
-const bot = new Telegraf(config.TELEGRAM_BOT_TOKEN);
+const bot = new Telegraf(config.telegram.botToken);
 bot.use(session());
 
 const app = express();
