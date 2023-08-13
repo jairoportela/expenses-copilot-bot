@@ -6,12 +6,11 @@ const paymentKey = 'paymentsMethods';
 
 const getMyPaymentMethods = async () => {
   const data = await redisClient.get(paymentKey);
-  console.log('PaymentsMethods redis: ', data);
   if (data) {
     return JSON.parse(data);
   }
   const { results } = await notion.databases.query({
-    database_id: config.NOTION_PAYMENTHS_METHODS_DB_ID,
+    database_id: config.notion.paymentsMethodsTable,
   });
 
   const paymentsMethods = results.map((paymentMethod) => {

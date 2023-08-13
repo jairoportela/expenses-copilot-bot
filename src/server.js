@@ -1,163 +1,76 @@
 import 'dotenv/config';
 import config from './config/config.js';
-import { Telegraf, Markup } from 'telegraf';
+import { Telegraf, Markup, session } from 'telegraf';
 import { message } from 'telegraf/filters';
 import express from 'express';
 
-import getMyCategories from './controllers/categories_controller.js';
-import getMyPaymentMethods from './controllers/payments_methods_controller.js';
-import createExpense from './controllers/expenses_controller.js';
-import { getActualMonthData } from './controllers/months_controller.js';
+import { getExpensesCategories } from './controllers/categories_controller.js';
+import helpCommand from './commands/help_command.js';
+import startCommand from './commands/start_command.js';
+import summaryMonthCommand from './commands/summary_month_command.js';
+import {
+  createCategoriesKeyboard,
+  createDataCommand,
+  selectCategoryAction,
+  selectPaymentMethodAction,
+} from './commands/create_data_command.js';
+
+import isValidUser from './utils/valid_user.js';
+import {
+  CreateExpenseCommandText,
+  CreateIncomeCommandText,
+} from './constants/constants.js';
 
 const port = Number(config.PORT) || 3000;
-if (!config.TELEGRAM_BOT_TOKEN)
+if (!config.telegram.botToken)
   throw new Error('"BOT_TOKEN" env var is required!');
 
-const bot = new Telegraf(config.TELEGRAM_BOT_TOKEN);
-
-const expensesByUser = {};
+const bot = new Telegraf(config.telegram.botToken);
+bot.use(session());
 
 const app = express();
 
-bot.start((ctx) =>
-  ctx.reply('Bienvenido al nuevo sistema de registro de gastos 💰')
-);
+bot.start(startCommand);
 
-bot.command('help', (ctx) => {
-  const helpMessage = `
-Bienvenido al bot de finanzas. Aquí tienes una lista de comandos disponibles:
-  
-/crear_gasto - Crea un nuevo gasto.
-/resumen_mes - Muestra un resumen financiero del mes actual.
-  
-¡Espero que esta información te sea útil!
-  `;
-
-  ctx.reply(helpMessage);
-});
+bot.command('help', helpCommand);
 
 //Start the create expense flow
-bot.command('crear_gasto', (ctx) => {
-  const chatId = ctx.from.id;
-  if (chatId != config.TELEGRAM_USER_ID) return errorResponse(ctx);
-  expensesByUser[chatId] = {}; // Inicializa el estado de la conversación
+bot.command('resumen_mes', summaryMonthCommand);
 
-  ctx.reply('Por favor, escribe el nombre del gasto:');
-});
-
-function formatNumberWithCommas(number) {
-  const floorNumber = Math.floor(number);
-  return floorNumber.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
-
-bot.command('resumen_mes', async (ctx) => {
-  const chatId = ctx.from.id;
-  if (chatId != config.TELEGRAM_USER_ID) return errorResponse(ctx);
-
-  const info = await getActualMonthData();
-  const isExceedingBudget = info.balance < 0;
-
-  const formattedInfo = `
-<b>Información Financiera\n${info.month}</b>\n
-Total gastos: $ ${formatNumberWithCommas(info.totalExpenses)}
-Total ingresos: $ ${formatNumberWithCommas(info.totalIncomes)}
-Balance: $ ${formatNumberWithCommas(info.balance)}
-Presupuesto: $ ${formatNumberWithCommas(info.budget)}${
-    isExceedingBudget ? ' ⚠️' : ' ✅'
-  }
-`;
-
-  ctx.replyWithHTML(formattedInfo, Markup.removeKeyboard());
-});
-
+bot.command(CreateExpenseCommandText, (ctx) =>
+  createDataCommand(ctx, CreateExpenseCommandText)
+);
+bot.command(CreateIncomeCommandText, (ctx) =>
+  createDataCommand(ctx, CreateIncomeCommandText)
+);
 //Manage the create expense flow
 bot.on(message('text'), async (ctx) => {
+  if (!isValidUser) return;
   const chatId = ctx.from.id;
-  if (chatId != config.TELEGRAM_USER_ID) return errorResponse(ctx);
+  const message = ctx.message.text;
+  const currentFlow = ctx.session?.currentFlow ?? '';
 
-  // Verifica si el usuario está en el flujo
-  if (!expensesByUser[chatId]) {
-    ctx.reply(
-      'Para agregar un gasto, inicia el flujo con el comando /agregar_gasto.'
+  if (currentFlow.length == 0) {
+    return ctx.reply(
+      'No has empezado ningún flujo, escribe / para ver los comandos disponibles.'
     );
-    return;
   }
 
-  const message = ctx.message.text;
-  if (expensesByUser[chatId].name === undefined) {
-    expensesByUser[chatId].name = message;
+  if (ctx.session[chatId].name === undefined) {
+    ctx.session[chatId].name = message;
     ctx.reply('Ahora escribe el valor del gasto:');
-  } else if (expensesByUser[chatId].value === undefined) {
-    expensesByUser[chatId].value = message;
-    const categories = await getMyCategories({ type: 'Expenses' });
-    const keyboard = Markup.inlineKeyboard(
-      categories.map((category) => {
-        return [
-          Markup.button.callback(
-            category.name,
-            `select_category:${category.id}`
-          ),
-        ];
-      })
-    );
-
+  } else if (ctx.session[chatId].value === undefined) {
+    ctx.session[chatId].value = message;
+    const keyboard = await createCategoriesKeyboard(ctx);
     ctx.reply('Selecciona una categoría:', keyboard);
-  } else if (expensesByUser[chatId].categoria === undefined) {
-    expensesByUser[chatId].category = message;
-
-    ctx.reply(await createExpense(expensesByUser[chatId]));
-    delete expensesByUser[userId]; // Limpia el estado de la conversación
   }
 });
 
 //Select category
-bot.action(/select_category:(.*)/, async (ctx) => {
-  const chatId = ctx.from.id;
-
-  if (chatId != config.TELEGRAM_USER_ID) return errorResponse(ctx);
-  const category = ctx.match[1];
-  expensesByUser[chatId].category = category;
-  ctx.telegram.editMessageText(
-    chatId,
-    ctx.callbackQuery.message.message_id,
-    null,
-    'Has seleccionado la categoría con ID: ' + category
-  );
-  const paymentMethods = await getMyPaymentMethods();
-  const keyboard = Markup.inlineKeyboard(
-    paymentMethods.map((paymentMethod) => {
-      return [
-        Markup.button.callback(
-          paymentMethod.name,
-          `select_payment:${paymentMethod.id}`
-        ),
-      ];
-    })
-  );
-
-  ctx.reply('Selecciona una método de pago:', keyboard);
-});
+bot.action(/select_category:(.*)/, selectCategoryAction);
 //Select and paymenth method
 
-bot.action(/select_payment:(.*)/, async (ctx) => {
-  const chatId = ctx.from.id;
-
-  if (chatId != config.TELEGRAM_USER_ID) return errorResponse(ctx);
-  const paymentMethod = ctx.match[1];
-  expensesByUser[chatId].paymentMethod = paymentMethod;
-  ctx.telegram.editMessageText(
-    chatId,
-    ctx.callbackQuery.message.message_id,
-    null,
-    'Has seleccionado el método de pago con ID: ' + paymentMethod
-  );
-
-  ctx.reply(await createExpense(expensesByUser[chatId]));
-  delete expensesByUser[chatId]; // Limpia el estado de la conversación
-});
-
-const errorResponse = (ctx) =>
-  ctx.reply('No tienes permisos para usar este bot ❌');
+bot.action(/select_payment:(.*)/, selectPaymentMethodAction);
 
 bot.launch();
 

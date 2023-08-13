@@ -2,12 +2,12 @@ import notion from '../config/notion.js';
 import config from '../config/config.js';
 import { DateTime } from 'luxon';
 import { getActualMonthId } from './months_controller.js';
-import { CreateExpenseCommandText } from '../constants/constants.js';
+import { CreateIncomeCommandText } from '../constants/constants.js';
 
 // Función para extraer la información del mensaje
 
-const createExpense = async ({ name, value, category, paymentMethod }) => {
-  if (name && value && category && paymentMethod) {
+const createIncome = async ({ name, value, category }) => {
+  if (name && value && category) {
     try {
       // Crea una instancia de DateTime en el timezone de Bogotá
       const bogotaDateTime = DateTime.now().setZone('America/Bogota');
@@ -17,7 +17,7 @@ const createExpense = async ({ name, value, category, paymentMethod }) => {
       const isoDate = bogotaDateTime.toISO();
       const data = await notion.pages.create({
         parent: {
-          database_id: config.notion.expensesTable,
+          database_id: config.notion.incomesTable,
         },
         properties: {
           Name: {
@@ -38,18 +38,17 @@ const createExpense = async ({ name, value, category, paymentMethod }) => {
           Categories: { relation: [{ id: category }] },
           Month: { relation: [{ id: actualMonth }] },
           Date: { date: { start: isoDate } },
-          'Payment Methods': { relation: [{ id: paymentMethod }] },
         },
       });
-      console.log('Gasto registrado en Notion ✅');
-      return 'Gasto registrado correctamente en Notion. ✅';
+      console.log('Ingreso registrado en Notion ✅');
+      return 'Ingreso registrado correctamente en Notion. ✅';
     } catch (error) {
       console.log(error);
-      return 'Hubo un error al registrar el gasto en Notion. ❌';
+      return 'Hubo un error al registrar el ingreso en Notion. ❌';
     }
   } else {
-    return `El formato utilizado no es el correcto, vuelve a empezar el flujo usando el comando /${CreateExpenseCommandText}.`;
+    return `El formato utilizado no es el correcto, vuelve a empezar el flujo usando el comando /${CreateIncomeCommandText}.`;
   }
 };
 
-export default createExpense;
+export default createIncome;
