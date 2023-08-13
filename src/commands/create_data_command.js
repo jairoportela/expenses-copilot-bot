@@ -12,6 +12,7 @@ import {
   getExpensesCategories,
   getIncomesCategories,
 } from '../controllers/categories_controller.js';
+import flowMessageGetter from '../utils/flow_message_getter.js';
 
 export const createDataCommand = (ctx, flow) => {
   if (!isValidUser(ctx)) return;
@@ -20,7 +21,7 @@ export const createDataCommand = (ctx, flow) => {
   ctx.session = { currentFlow: flow };
   ctx.session[chatId] = {};
 
-  ctx.reply('Por favor, escribe el nombre del gasto:');
+  ctx.reply(`Por favor, escribe el nombre del ${flowMessageGetter(flow)}:`);
 };
 
 export const selectCategoryAction = async (ctx) => {
